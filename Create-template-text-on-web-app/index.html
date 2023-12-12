@@ -8,15 +8,13 @@
     <script crossorigin src="https://unpkg.com/react/umd/react.production.min.js"></script>
     <!-- ReactのDOM操作用ライブラリ -->
     <script crossorigin src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@mui/material@latest/umd/material-ui.development.js"
-        crossorigin="anonymous"></script>
+    <script src=" https://unpkg.com/@mui/material@latest/umd/material-ui.development.js"></script>
     <!-- BabelのCDN -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 
     <script type="text/babel">
         const { useState, useEffect } = React
-
         const {
             Avatar,
             Box,
@@ -29,39 +27,51 @@
             Stack,
             TextField,
             Typography,
-        } = MaterialUI
-        const { teal } = MaterialUI.colors
+        } = MaterialUI;
+        const { teal } = MaterialUI.colors;
+
+        function getTodayMMDD() {
+            const today = new Date();
+            const month = today.getMonth() + 1;
+            const day = today.getDate();
+            return month + '/' + day;
+        }
 
         const App = () => {
             const [status, setStatus] = useState('login');
 
-            if (status === 'login') {
-                return (
-                    <LoginForm
-                        status={status}
-                        setStatus={setStatus}
-                    />
-                );
-            } else if (status === 'start') {
-                return (
-                    <StartJob
-                        status={status}
-                        setStatus={setStatus}
-                    />
-                );
-            } else if (status === 'end') {
-                return (
-                    <EndJob
-                        status={status}
-                        setStatus={setStatus}
-                    />
-                );
+            const RoutePages = () => {
+                if (status === 'login') {
+                    return (
+                        <LoginForm
+                            status={status}
+                            setStatus={setStatus}
+                        />
+                    );
+                } else if (status === 'start') {
+                    return (
+                        <StartJob
+                            status={status}
+                            setStatus={setStatus}
+                        />
+                    );
+                } else if (status === 'end') {
+                    return (
+                        <EndJob
+                            status={status}
+                            setStatus={setStatus}
+                        />
+                    );
+                }
             }
 
+            return (
+                <RoutePages />
+            );
         }
 
         const LoginForm = ({ status, setStatus }) => {
-            const [username, setUsername] = useState(localStorage.getItem('username'), '')
+            const [username, setUsername] = useState(localStorage.getItem('username'), '');
 
             const handleUsernameChange = (event) => {
                 setUsername(event.target.value)
@@ -132,6 +142,15 @@
         }
 
         const StartJob = ({ status, setStatus }) => {
+            const [username, setUsername] = useState(localStorage.getItem('username'), '');
+            const [date, setDate] = useState(getTodayMMDD());
+            const [startTime, setStartTime] = useState('');
+            const [mailTitle, setMailTitle] = useState('');
+
+            useEffect(() => {
+                setMailTitle('[' + date + ' テレワーク] ' + username + ' 業務開始');
+            }, [username, date]);
+
             return (
                 <Grid>
                     <Paper
@@ -148,6 +167,30 @@
                                 テレワーク 業務開始
                             </Typography>
                         </Grid>
+                        <Grid>
+                            <TextField
+                                label="username"
+                                value={username}
+                                variant="standard"
+                                fullWidth
+                                onChange={(event) => setUsername(event.target.value)}
+                            />
+                            <TextField
+                                label="date"
+                                value={date}
+                                variant="standard"
+                                fullWidth
+                                required
+                                onChange={(event) => setDate(event.target.value)}
+                            />
+                            <TextField
+                                label="Mail Title"
+                                value={mailTitle}
+                                variant="standard"
+                                fullWidth
+                            />
+                        </Grid>
+
                         <Box mt={3}>
                             <Button
                                 type="click"
@@ -155,17 +198,7 @@
                                 variant="contained"
                                 fullWidth
                             >
-                                業務開始
-                            </Button>
-                        </Box>
-                        <Box mt={3}>
-                            <Button
-                                type="click"
-                                color="primary"
-                                variant="contained"
-                                fullWidth
-                            >
-                                業務終了
+                                入力をクリアして最初のページに戻る
                             </Button>
                         </Box>
                     </Paper>
