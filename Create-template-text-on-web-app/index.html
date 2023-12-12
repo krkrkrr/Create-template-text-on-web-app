@@ -30,11 +30,43 @@
         } = MaterialUI;
         const { teal } = MaterialUI.colors;
 
-        function getTodayMMDD() {
+        function getTodayMmdd() {
             const today = new Date();
             const month = today.getMonth() + 1;
             const day = today.getDate();
             return month + '/' + day;
+        }
+
+        function getCurrentStartTime() {
+            const today = new Date();
+            const hour = today.getHours();
+            const minute = Math.round(today.getMinutes() / 15) * 15;
+            return hour + ':' + ('00' + minute).slice(-2);
+        }
+
+        function getCurrentEndTime() {
+            const today = new Date();
+            const hour = today.getHours();
+            const minute = Math.ceil(today.getMinutes() / 15) * 15;
+            return hour + ':' + ('00' + minute).slice(-2);
+        }
+
+        function getEndTime(startTimeString) {
+            const [hourString, minuteString] = startTimeString.split(':');
+            const minute = (Number(minuteString) + 45) % 60;
+            const hour = Number(hourString) + 8 + Math.floor((Number(minuteString) + 45) / 60);
+            return hour + ':' + ('00' + minute).slice(-2);
+        }
+
+        function getMailText(startTime, endTime, jobs) {
+            return '本日の業務を開始します。\n\n' +
+                '業務開始：\t' + startTime + '\n' +
+                '休憩：\t12:00-13:00\n' +
+                '業務終了：\t' + endTime + '\n' +
+                '業務内容：\n' +
+                jobs.split('\n').map((job) => {
+                    return '\t' + job;
+                }).join('\n');
         }
 
         const App = () => {
@@ -78,9 +110,10 @@
             }
             const handleSubmit = (event) => {
                 event.preventDefault()
-                console.log(username)
-                localStorage.setItem('username', username)
-                setUsername(username)
+                if (username) {
+                    localStorage.setItem('username', username)
+                    setUsername(username)
+                }
             }
             const handleStartJob = (event) => {
                 handleSubmit(event)
@@ -107,7 +140,7 @@
                             </Typography>
                         </Grid>
                         <TextField
-                            label="name"
+                            label="Username"
                             value={username}
                             variant="standard"
                             fullWidth
@@ -131,7 +164,7 @@
                                 color="primary"
                                 variant="contained"
                                 fullWidth
-                                onclick={handleEndJob}
+                                onClick={handleEndJob}
                             >
                                 業務終了
                             </Button>
@@ -143,13 +176,24 @@
 
         const StartJob = ({ status, setStatus }) => {
             const [username, setUsername] = useState(localStorage.getItem('username'), '');
-            const [date, setDate] = useState(getTodayMMDD());
-            const [startTime, setStartTime] = useState('');
+            const [date, setDate] = useState(getTodayMmdd());
+            const [startTime, setStartTime] = useState(getCurrentStartTime());
+            const [endTime, setEndTime] = useState(getEndTime(startTime));
+            const [jobs, setJobs] = useState('');
             const [mailTitle, setMailTitle] = useState('');
+            const [mailText, setMailText] = useState('');
 
             useEffect(() => {
                 setMailTitle('[' + date + ' テレワーク] ' + username + ' 業務開始');
             }, [username, date]);
+
+            useEffect(() => {
+                setEndTime(getEndTime(startTime));
+            }, [startTime]);
+
+            useEffect(() => {
+                setMailText(getMailText(startTime, endTime, jobs));
+            }, [startTime, endTime, jobs]);
 
             return (
                 <Grid>
@@ -169,18 +213,17 @@
                         </Grid>
                         <Grid>
                             <TextField
-                                label="username"
+                                label="Username"
                                 value={username}
                                 variant="standard"
                                 fullWidth
                                 onChange={(event) => setUsername(event.target.value)}
                             />
                             <TextField
-                                label="date"
+                                label="Date"
                                 value={date}
                                 variant="standard"
                                 fullWidth
-                                required
                                 onChange={(event) => setDate(event.target.value)}
                             />
                             <TextField
@@ -190,6 +233,38 @@
                                 fullWidth
                             />
                         </Grid>
+                        <Grid>
+                            <TextField
+                                label="業務開始"
+                                value={startTime}
+                                variant="standard"
+                                fullWidth
+                                onChange={(event) => setStartTime(event.target.value)}
+                            />
+                            <TextField
+                                label="業務終了"
+                                value={endTime}
+                                variant="standard"
+                                fullWidth
+                                onChange={(event) => setEndTime(event.target.value)}
+                            />
+                            <TextField
+                                label="業務内容"
+                                value={jobs}
+                                variant="standard"
+                                fullWidth
+                                multiline
+                                onChange={(event) => setJobs(event.target.value)}
+                            />
+                            <TextField
+                                label="Mail Text"
+                                value={mailText}
+                                variant="standard"
+                                fullWidth
+                                multiline
+                                onChange={(event) => setMailText(event.target.value)}
+                            />
+                        </Grid>
 
                         <Box mt={3}>
                             <Button
@@ -197,6 +272,11 @@
                                 color="primary"
                                 variant="contained"
                                 fullWidth
+                                onClick={() => {
+                                    localStorage.removeItem('username');
+                                    setUsername('');
+                                    setStatus('login');
+                                }}
                             >
                                 入力をクリアして最初のページに戻る
                             </Button>
